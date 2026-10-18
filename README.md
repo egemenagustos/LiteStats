@@ -43,7 +43,7 @@ macOS 13 Ventura or later.
 
 ## Installation
 
-1. Download `LiteStats.zip` from the [latest release](https://github.com/egmnagsts/LiteStats/releases/latest).
+1. Download `LiteStats.zip` from the [latest release](https://github.com/egemenagustos/LiteStats/releases/latest).
 2. Unzip it and move `LiteStats.app` to `/Applications`.
 3. The app is not notarized, so macOS will block the first launch. Either right-click the app and choose **Open**, or run:
 
@@ -56,7 +56,7 @@ macOS 13 Ventura or later.
 Requires Xcode 15 or later (or the matching command line tools).
 
 ```sh
-git clone https://github.com/egmnagsts/LiteStats.git
+git clone https://github.com/egemenagustos/LiteStats.git
 cd LiteStats
 ./scripts/build-app.sh
 open build/LiteStats.app
@@ -145,7 +145,7 @@ macOS 13 Ventura veya üzeri.
 
 ### Kurulum
 
-1. [Son sürümden](https://github.com/egmnagsts/LiteStats/releases/latest) `LiteStats.zip` dosyasını indirin.
+1. [Son sürümden](https://github.com/egemenagustos/LiteStats/releases/latest) `LiteStats.zip` dosyasını indirin.
 2. Zip'i açın ve `LiteStats.app` dosyasını `/Applications` klasörüne taşıyın.
 3. Uygulama Apple tarafından noter onaylı (notarized) olmadığı için macOS ilk açılışı engeller. Uygulamaya sağ tıklayıp **Aç** deyin ya da şu komutu çalıştırın:
 
@@ -158,7 +158,7 @@ macOS 13 Ventura veya üzeri.
 Xcode 15 veya üzeri (ya da ilgili komut satırı araçları) gerekir.
 
 ```sh
-git clone https://github.com/egmnagsts/LiteStats.git
+git clone https://github.com/egemenagustos/LiteStats.git
 cd LiteStats
 ./scripts/build-app.sh
 open build/LiteStats.app
