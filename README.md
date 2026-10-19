@@ -2,7 +2,7 @@
 
 A tiny, fast system monitor for the macOS menu bar.
 
-LiteStats shows CPU, memory, network speed and SSD usage in a single menu bar item. It is written in plain Swift and AppKit, has no dependencies, and is built to stay out of the way: about 240 KB on disk, around 15 MB of memory, and well under 1% CPU.
+LiteStats shows CPU, memory, network speed and SSD usage in a single menu bar item. It is written in plain Swift and AppKit, has no dependencies, and is built to stay out of the way: about 290 KB on disk, around 15 MB of memory, and well under 1% CPU.
 
 [Türkçe](#türkçe)
 
@@ -32,7 +32,7 @@ Each metric has a small icon that reacts to load: the CPU fan spins faster as lo
 
 |                     | LiteStats            | Stats                  |
 | ------------------- | -------------------- | ---------------------- |
-| App size            | ~240 KB              | ~18 MB                 |
+| App size            | ~290 KB              | ~18 MB                 |
 | Memory footprint    | ~15 MB               | 100+ MB                |
 | Frameworks          | AppKit only          | 11 bundled modules     |
 | Menu bar items      | 1                    | 1 per module           |
@@ -128,7 +128,7 @@ MIT. See [LICENSE](LICENSE).
 
 macOS menü çubuğu için küçük ve hızlı bir sistem monitörü.
 
-LiteStats; CPU, bellek, ağ hızı ve SSD kullanımını tek bir menü çubuğu öğesinde, yüke göre hareket eden ikonlarla gösterir: CPU fanı yük arttıkça hızlanır, trafik varken ağ okları akar, bellek çipi ve SSD dilimi doluluğa göre dolar. Öğe yaklaşık 215 pt genişliğindedir, MacBook Air'de çentiğin yanına sığar. Saf Swift ve AppKit ile yazılmıştır, hiçbir bağımlılığı yoktur ve arka planda sessizce çalışmak için tasarlanmıştır: diskte yaklaşık 240 KB, bellekte yaklaşık 15 MB ve %1'in çok altında CPU.
+LiteStats; CPU, bellek, ağ hızı ve SSD kullanımını tek bir menü çubuğu öğesinde, yüke göre hareket eden ikonlarla gösterir: CPU fanı yük arttıkça hızlanır, trafik varken ağ okları akar, bellek çipi ve SSD dilimi doluluğa göre dolar. Öğe yaklaşık 215 pt genişliğindedir, MacBook Air'de çentiğin yanına sığar. Saf Swift ve AppKit ile yazılmıştır, hiçbir bağımlılığı yoktur ve arka planda sessizce çalışmak için tasarlanmıştır: diskte yaklaşık 290 KB, bellekte yaklaşık 15 MB ve %1'in çok altında CPU.
 
 ### Özellikler
 
