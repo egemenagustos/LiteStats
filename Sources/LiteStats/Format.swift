@@ -27,6 +27,24 @@ enum Format {
         return String(repeating: figureSpace, count: 4 - number.count) + "\(number) \(unit)"
     }
 
+    /// Very short speed for the stacked menu bar text, e.g. "999K", "1.2M", " 14M",
+    /// padded to four characters so the width stays stable.
+    static func compactSpeed(_ bytesPerSecond: Double) -> String {
+        let kb = max(bytesPerSecond, 0) / 1000
+        let text: String
+        if kb < 999.5 {
+            text = String(format: "%.0fK", locale: .current, kb)
+        } else if kb < 9_950 {
+            text = String(format: "%.1fM", locale: .current, kb / 1000)
+        } else if kb < 999_500 {
+            text = String(format: "%.0fM", locale: .current, kb / 1000)
+        } else {
+            text = String(format: "%.1fG", locale: .current, kb / 1_000_000)
+        }
+        guard text.count < 4 else { return text }
+        return String(repeating: figureSpace, count: 4 - text.count) + text
+    }
+
     /// Decimal units, matching Finder.
     static func bytes(_ value: Int64) -> String {
         ByteCountFormatter.string(fromByteCount: value, countStyle: .file)

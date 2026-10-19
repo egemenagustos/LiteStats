@@ -5,8 +5,7 @@ import ServiceManagement
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private let settings = Settings.shared
     private let statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-    private let font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .regular)
-    private let textView = StatusTextView()
+    private let barView = StatusBarView()
 
     private let cpuMonitor = CPUMonitor()
     private let memoryMonitor = MemoryMonitor()
@@ -30,14 +29,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     private var sessionItem = NSMenuItem()
     private var diskItem = NSMenuItem()
     private var diskFreeItem = NSMenuItem()
+    private var showItem = NSMenuItem()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         L10n.reload()
         if let button = statusItem.button {
-            textView.font = font
-            textView.frame = button.bounds
-            textView.autoresizingMask = [.width, .height]
-            button.addSubview(textView)
+            barView.frame = button.bounds
+            barView.autoresizingMask = [.width, .height]
+            barView.animationsEnabled = settings.animations
+            button.addSubview(barView)
         }
         buildMenu()
         updateLength()
@@ -70,51 +70,47 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         if menuIsOpen { updateDetails() }
     }
 
-    // MARK: - Menu bar title
+    // MARK: - Menu bar
 
-    /// Builds the menu bar text. With `widest` it uses the widest possible values,
-    /// which sizes the status item once instead of on every update.
-    private func makeTitle(widest: Bool = false) -> String {
-        var parts: [String] = []
-        if settings.isVisible(.cpu) {
-            parts.append("CPU \(widest ? "100%" : cpu.map { Format.percent($0.total) } ?? "-")")
-        }
-        if settings.isVisible(.memory) {
-            parts.append("RAM \(widest ? "100%" : memory.map { Format.percent($0.usage) } ?? "-")")
-        }
-        if settings.isVisible(.network) {
-            let up = widest ? "8888 MB/s" : network.map { Format.speed($0.upload, padded: true) } ?? "-"
-            let down = widest ? "8888 MB/s" : network.map { Format.speed($0.download, padded: true) } ?? "-"
-            parts.append("\u{2191}\(up) \u{2193}\(down)")
-        }
-        if settings.isVisible(.disk) {
-            if widest {
-                parts.append("SSD 100% \u{00B7} 8888 GB")
-            } else {
-                parts.append(disk.map { "SSD \(Format.percent($0.usage)) \u{00B7} \(Format.gigabytes($0.available))" } ?? "SSD -")
+    /// Spoken text for VoiceOver, since the menu bar itself is mostly icons.
+    private func makeTitle(_ metrics: [Metric]) -> String {
+        metrics.map { metric in
+            switch metric {
+            case .cpu: return "CPU \(cpu.map { Format.percent($0.total) } ?? "-")"
+            case .memory: return "RAM \(memory.map { Format.percent($0.usage) } ?? "-")"
+            case .network:
+                let up = network.map { Format.speed($0.upload) } ?? "-"
+                let down = network.map { Format.speed($0.download) } ?? "-"
+                return "\u{2191}\(up) \u{2193}\(down)"
+            case .disk: return "SSD \(disk.map { Format.percent($0.usage) } ?? "-")"
             }
-        }
-        return parts.joined(separator: "   ")
+        }.joined(separator: ", ")
     }
 
     /// Fixed length avoids a full menu bar relayout on every update, which is
-    /// by far the most expensive part of running a text status item.
+    /// by far the most expensive part of running a status item.
     private func updateLength() {
-        let widest = makeTitle(widest: true)
-        guard !widest.isEmpty else {
+        let metrics = settings.visibleMetrics
+        barView.metrics = metrics
+        guard !metrics.isEmpty else {
             statusItem.length = NSStatusItem.squareLength
             return
         }
-        let width = (widest as NSString).size(withAttributes: [.font: font]).width
-        statusItem.length = ceil(width) + 10
+        statusItem.length = ceil(StatusBarView.width(for: metrics)) + 8
     }
 
     private func updateTitle() {
-        let title = makeTitle()
+        barView.update(
+            cpu: cpu?.total,
+            memory: memory?.usage,
+            upload: network?.upload,
+            download: network?.download,
+            disk: disk?.usage
+        )
+        let title = makeTitle(settings.visibleMetrics)
         guard title != lastTitle, let button = statusItem.button else { return }
         lastTitle = title
 
-        textView.text = title
         button.setAccessibilityLabel(title.isEmpty ? "LiteStats" : title)
         if title.isEmpty, button.image == nil {
             button.image = NSImage(systemSymbolName: "gauge.medium", accessibilityDescription: "LiteStats")
@@ -148,7 +144,30 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
             item.state = settings.isVisible(metric) ? .on : .off
             showMenu.addItem(item)
         }
-        menu.addItem(submenuItem(L10n.t("show"), showMenu))
+        showItem = submenuItem(L10n.t("show"), showMenu)
+        showItem.isEnabled = settings.layout == .all
+        menu.addItem(showItem)
+
+        let layoutMenu = NSMenu()
+        let allItem = NSMenuItem(title: L10n.t("layout.all"), action: #selector(setLayout(_:)), keyEquivalent: "")
+        allItem.target = self
+        allItem.representedObject = "all"
+        allItem.state = settings.layout == .all ? .on : .off
+        layoutMenu.addItem(allItem)
+        layoutMenu.addItem(.separator())
+        for metric in Metric.allCases {
+            let item = NSMenuItem(title: L10n.t("layout.only", L10n.t(metric.rawValue)), action: #selector(setLayout(_:)), keyEquivalent: "")
+            item.target = self
+            item.representedObject = metric.rawValue
+            item.state = settings.layout == .single(metric) ? .on : .off
+            layoutMenu.addItem(item)
+        }
+        menu.addItem(submenuItem(L10n.t("layout"), layoutMenu))
+
+        let animationsItem = NSMenuItem(title: L10n.t("animations"), action: #selector(toggleAnimations(_:)), keyEquivalent: "")
+        animationsItem.target = self
+        animationsItem.state = settings.animations ? .on : .off
+        menu.addItem(animationsItem)
 
         let intervalMenu = NSMenu()
         for interval in Settings.intervals {
@@ -256,6 +275,21 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         updateTitle()
     }
 
+    @objc private func setLayout(_ sender: NSMenuItem) {
+        guard let raw = sender.representedObject as? String else { return }
+        settings.layout = Metric(rawValue: raw).map(BarLayout.single) ?? .all
+        sender.menu?.items.forEach { $0.state = $0 === sender ? .on : .off }
+        showItem.isEnabled = settings.layout == .all
+        updateLength()
+        updateTitle()
+    }
+
+    @objc private func toggleAnimations(_ sender: NSMenuItem) {
+        settings.animations.toggle()
+        sender.state = settings.animations ? .on : .off
+        barView.animationsEnabled = settings.animations
+    }
+
     @objc private func setInterval(_ sender: NSMenuItem) {
         guard let interval = sender.representedObject as? Double else { return }
         settings.interval = interval
@@ -267,12 +301,6 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
         guard let raw = sender.representedObject as? String, let language = Language(rawValue: raw) else { return }
         settings.language = language
         L10n.reload()
-        if let button = statusItem.button {
-            textView.font = font
-            textView.frame = button.bounds
-            textView.autoresizingMask = [.width, .height]
-            button.addSubview(textView)
-        }
         buildMenu()
     }
 
